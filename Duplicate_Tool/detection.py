@@ -44,8 +44,9 @@ def print_groups(duplicate_groups):
         i+=1
         print(f"Avg Similarity: {similarity}")
         for chunk in group:
+            print("start chunk")
             print(chunk)
-            print("\n")
+            print("end chunk")
         print("="*50)
         print("\n")
 
