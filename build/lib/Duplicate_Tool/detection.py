@@ -30,6 +30,16 @@ def detect_duplicate_groups(java_code, threshold=0.95):
                     group.append(j)
                     visited.add(j)
             if len(group) > 1:  # If a group has more than one chunk, it's a duplicate group
-                duplicate_groups.append([filtered_chunks[index] for index in group])
+                avg_similarity = np.mean([similarity_matrix[group[0], index] for index in group[1:]])  # Average similarity of the group
+                duplicate_groups.append(([filtered_chunks[index] for index in group], avg_similarity))
 
     return duplicate_groups
+
+
+def print_groups(duplicate_groups):
+    for group, similarity in duplicate_groups:
+        print(f"Avg Similarity: {similarity}")
+        for chunk in group:
+            print(chunk)
+        print("\n")
+
