@@ -1,0 +1,12 @@
+Metadata-Version: 2.2
+Name: Duplicate_Tool
+Version: 0.1
+Summary: A tool for detecting duplicate Java code
+Author: Adham Mohamed
+Requires-Dist: torch
+Requires-Dist: transformers
+Requires-Dist: scikit-learn
+Requires-Dist: numpy
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: summary
