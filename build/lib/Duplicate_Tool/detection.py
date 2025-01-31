@@ -37,9 +37,15 @@ def detect_duplicate_groups(java_code, threshold=0.95):
 
 
 def print_groups(duplicate_groups):
+    i=1
     for group, similarity in duplicate_groups:
+        print("="*50)
+        print(f"Duplicate Group: {i}")
+        i+=1
         print(f"Avg Similarity: {similarity}")
         for chunk in group:
             print(chunk)
+            print("\n")
+        print("="*50)
         print("\n")
 
