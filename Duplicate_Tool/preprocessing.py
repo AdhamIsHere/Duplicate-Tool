@@ -1,122 +1,17 @@
-# import re
-# import subprocess
-# import os
-
-# # Get the absolute path to the JAR file inside the package
-# JAR_PATH = os.path.join(os.path.dirname(__file__), "resources", "google-java-format-1.25.2-all-deps.jar")
-
-
-# def remove_comments(code):
-#     code = re.sub(r'//.*', '', code)  # Remove single-line comments
-#     code = re.sub(r'/\*[\s\S]*?\*/', '', code)  # Remove multi-line comments
-#     return code.strip()
-
-# def format_code(code):
-#     try:
-#         with open("temp.java", "w") as f:
-#             f.write(code)
-
-#         process = subprocess.run(
-#             ["java", "-jar", JAR_PATH, "-i", "temp.java"],
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE
-#         )
-
-#         if process.returncode == 0:
-#             with open("temp.java", "r") as f:
-#                 # delete the temp file
-#                 lines = f.read()
-                
-#                 return lines
-#         else:
-#             print("Error formatting code:", process.stderr.decode())
-#             return code
-#     except Exception as e:
-#         print("Exception occurred while formatting code:", str(e))
-#         return code
-#     finally:
-#         if os.path.exists("temp.java"):
-#             os.remove("temp.java")
-
-# def extract_chunks(java_code, window_size=5):
-#     stride = window_size // 2
-#     lines = java_code.split("\n")
-#     return ["\n".join(lines[i:i + window_size]) for i in range(0, len(lines) - window_size + 1, stride)]
-
-# def handle_overlapping_chunks(chunks, threshold=0.5):
-#     # This function handles overlapping chunks by merging or filtering based on threshold
-#     filtered_chunks = []
-#     i = 0
-#     while i < len(chunks):
-#         if i + 1 < len(chunks):
-#             overlap = calculate_overlap(chunks[i], chunks[i + 1])
-#             if overlap > threshold:
-#                 # Merge chunks if overlap is too high
-#                 merged_chunk = chunks[i] + "\n" + chunks[i + 1]
-#                 filtered_chunks.append(merged_chunk)
-#                 i += 2  # Skip the next chunk as it's merged
-#             else:
-#                 filtered_chunks.append(chunks[i])
-#                 i += 1
-#         else:
-#             filtered_chunks.append(chunks[i])
-#             i += 1
-#     return filtered_chunks
-
-# def calculate_overlap(chunk1, chunk2):
-#     # Calculate the overlap ratio between two chunks
-#     chunk1_lines = chunk1.split("\n")
-#     chunk2_lines = chunk2.split("\n")
-
-#     common_lines = len(set(chunk1_lines) & set(chunk2_lines))
-#     overlap = common_lines / min(len(chunk1_lines), len(chunk2_lines))
-
-#     return overlap
-
-# def preprocess_code(java_code):
-#     code = remove_comments(java_code)
-#     code = format_code(code)
-#     return extract_chunks(code)
-
-
-# import javalang
-
-# def extract_methods_from_java(java_code):
-#     """Extract complete methods as chunks using Java AST parsing"""
-#     try:
-#         tree = javalang.parse.parse(java_code)
-#         methods = []
-        
-#         for _, node in tree.filter(javalang.tree.MethodDeclaration):
-#             # Convert method back to string representation
-#             method_lines = java_code.split('\n')
-#             method_start = node.position.line - 1
-            
-#             # Find method end by counting braces
-#             brace_count = 0
-#             method_end = method_start
-#             for i in range(method_start, len(method_lines)):
-#                 line = method_lines[i]
-#                 brace_count += line.count('{') - line.count('}')
-#                 if brace_count == 0 and '{' in method_lines[method_start:i+1]:
-#                     method_end = i
-#                     break
-            
-#             method_code = '\n'.join(method_lines[method_start:method_end+1])
-#             methods.append(method_code.strip())
-        
-#         return methods
-#     except:
-#         # Fallback to simpler method extraction
-#         return extract_methods_simple(java_code)
-
-
 import re
+import subprocess
+import os
 
-def preprocess_code(java_code):
+def preprocess_code(java_code, use_formatting=True):
     """Extract complete methods as chunks"""
+    # Format code first for better consistency
+    if use_formatting:
+        code = format_java_code(java_code)
+    else:
+        code = normalize_code(java_code)
+    
     # Remove comments and normalize whitespace
-    code = remove_comments(java_code)
+    code = remove_comments(code)
     
     # Extract complete methods
     methods = extract_complete_methods(code)
@@ -199,3 +94,57 @@ def handle_overlapping_chunks(chunks):
             seen_chunks.add(normalized)
     
     return filtered_chunks
+
+def format_java_code(java_code):
+    """Format Java code using Google Java Format"""
+    try:
+        # Path to the Google Java Format jar file
+        jar_path = os.path.join(os.path.dirname(__file__), 'resources', 'google-java-format-1.25.2-all-deps.jar')
+        
+        if not os.path.exists(jar_path):
+            print(f"Warning: Google Java Format jar not found at {jar_path}")
+            return java_code
+        
+        # Create a temporary file with the Java code
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.java', delete=False) as temp_file:
+            temp_file.write(java_code)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Run Google Java Format
+            result = subprocess.run([
+                'java', '-jar', jar_path,
+                '--replace',  # Replace the file in place
+                temp_file_path
+            ], capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0:
+                # Read the formatted code
+                with open(temp_file_path, 'r') as f:
+                    formatted_code = f.read()
+                return formatted_code
+            else:
+                print(f"Google Java Format error: {result.stderr}")
+                return java_code
+        finally:
+            # Clean up temporary file
+            os.unlink(temp_file_path)
+            
+    except Exception as e:
+        print(f"Error formatting code: {e}")
+        return java_code
+
+def normalize_code(java_code):
+    """Normalize code formatting for better duplicate detection"""
+    # Basic normalization if Google Java Format is not available
+    lines = java_code.split('\n')
+    normalized_lines = []
+    
+    for line in lines:
+        # Remove extra whitespace but preserve structure
+        stripped = line.strip()
+        if stripped:
+            normalized_lines.append(stripped)
+    
+    return '\n'.join(normalized_lines)

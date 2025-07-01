@@ -1,36 +1,3 @@
-Metadata-Version: 2.4
-Name: duplicate_tool
-Version: 0.2
-Summary: A tool for detecting duplicate Java code using CodeT5 embeddings
-Home-page: https://github.com/adham-mohamed/duplicate-tool
-Author: Adham Mohamed
-Classifier: Development Status :: 4 - Beta
-Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: MIT License
-Classifier: Operating System :: OS Independent
-Classifier: Programming Language :: Python :: 3
-Classifier: Programming Language :: Python :: 3.8
-Classifier: Programming Language :: Python :: 3.9
-Classifier: Programming Language :: Python :: 3.10
-Classifier: Programming Language :: Python :: 3.11
-Classifier: Topic :: Software Development :: Quality Assurance
-Requires-Python: >=3.8
-Description-Content-Type: text/markdown
-License-File: LICENSE
-Requires-Dist: torch
-Requires-Dist: transformers
-Requires-Dist: scikit-learn
-Requires-Dist: numpy
-Dynamic: author
-Dynamic: classifier
-Dynamic: description
-Dynamic: description-content-type
-Dynamic: home-page
-Dynamic: license-file
-Dynamic: requires-dist
-Dynamic: requires-python
-Dynamic: summary
-
 # Duplicate Tool v0.2
 
 A sophisticated tool for detecting duplicate code in Java files using CodeT5 embeddings and cosine similarity analysis.

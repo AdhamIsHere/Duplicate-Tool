@@ -1,0 +1,2 @@
+[console_scripts]
+duplicate-tool = Duplicate_Tool.detection:main

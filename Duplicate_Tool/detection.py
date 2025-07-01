@@ -35,8 +35,8 @@ from preprocessing import preprocess_code, handle_overlapping_chunks
 
 #     return duplicate_groups
 
-def detect_duplicate_groups(java_code, threshold=0.90):
-    chunks = preprocess_code(java_code)
+def detect_duplicate_groups(java_code, threshold=0.90, use_formatting=True):
+    chunks = preprocess_code(java_code, use_formatting=use_formatting)
     filtered_chunks = handle_overlapping_chunks(chunks)
     embeddings = [get_embedding(chunk) for chunk in filtered_chunks]
 
@@ -86,8 +86,14 @@ def detect_duplicate_groups(java_code, threshold=0.90):
 
     return duplicate_groups
 
-def extract_code_blocks(java_code, min_lines=2):
+def extract_code_blocks(java_code, min_lines=2, use_formatting=True):
     """Extract code blocks (both methods and statement groups) for duplicate detection"""
+    
+    # Format the code first for better consistency
+    if use_formatting:
+        from preprocessing import format_java_code
+        java_code = format_java_code(java_code)
+    
     lines = java_code.split('\n')
     blocks = []
     
@@ -172,12 +178,12 @@ def extract_code_blocks(java_code, min_lines=2):
     
     return blocks
 
-def detect_duplicate_groups_enhanced(java_code, threshold=0.90, detect_intra_method=True, prefer_methods=True):
+def detect_duplicate_groups_enhanced(java_code, threshold=0.90, detect_intra_method=True, prefer_methods=True, use_formatting=True):
     """Enhanced duplicate detection that can find both inter-method and intra-method duplicates"""
     if detect_intra_method:
-        chunks = extract_code_blocks(java_code)
+        chunks = extract_code_blocks(java_code, use_formatting=use_formatting)
     else:
-        chunks = preprocess_code(java_code)
+        chunks = preprocess_code(java_code, use_formatting=use_formatting)
     
     filtered_chunks = handle_overlapping_chunks(chunks)
     
@@ -293,23 +299,24 @@ def print_groups(duplicate_groups):
     if not duplicate_groups:
         print("No duplicate groups found.")
         
-if __name__ == "__main__":
-
+def main():
+    """Main CLI entry point for the duplicate detection tool"""
+    # Test with poorly formatted code to show the difference
     java_code = """
-    public class DuplicateExample {
+    public class DuplicateExample{
         // Duplicate method 1 - calculateSum
-        public int calculateSum(int a, int b) {
-            int result = a + b;
-            System.out.println("Sum calculated: " + result);
+        public int calculateSum(int a,int b){
+            int result=a+b;
+            System.out.println("Sum calculated: "+result);
             return result;
         }
         
-        // Duplicate method 2 - same as calculateSum
-        public int addNumbers(int x, int y) {
-            int result = x + y;
-            System.out.println("Sum calculated: " + result);
-            return result;
-        }
+        // Duplicate method 2 - same as calculateSum but different formatting
+        public int addNumbers(int x,   int y)   {
+    int result = x + y;
+    System.out.println("Sum calculated: " + result);
+    return result;
+}
         
         // Duplicate method 3 - slight variation of calculateSum
         public int computeTotal(int num1, int num2) {
@@ -319,78 +326,46 @@ if __name__ == "__main__":
         }
         
         // Duplicate loop pattern 1
-        public void printNumbers1() {
-            for (int i = 0; i < 10; i++) {
-                System.out.println("Number: " + i);
+        public void printNumbers1(){
+            for(int i=0;i<10;i++){
+                System.out.println("Number: "+i);
             }
         }
         
-        // Duplicate loop pattern 2 - same logic
+        // Duplicate loop pattern 2 - same logic but different formatting
         public void displayNumbers() {
             for (int j = 0; j < 10; j++) {
                 System.out.println("Number: " + j);
             }
         }
-        
-        // Duplicate validation pattern 1
-        public boolean validateUser(String username, String password) {
-            if (username == null || username.isEmpty()) {
-                return false;
-            }
-            if (password == null || password.length() < 6) {
-                return false;
-            }
-            return true;
-        }
-        
-        // Duplicate validation pattern 2
-        public boolean checkCredentials(String user, String pass) {
-            if (user == null || user.isEmpty()) {
-                return false;
-            }
-            if (pass == null || pass.length() < 6) {
-                return false;
-            }
-            return true;
-        }
-        
-        // Non-duplicate method for comparison
-        public void processData(String data) {
-            if (data != null) {
-                String processed = data.trim().toUpperCase();
-                System.out.println("Processed: " + processed);
-            }
-        }
-        
-        // Another duplicate - file reading pattern 1
-        public String readFile(String filename) {
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(filename));
-                String line = reader.readLine();
-                reader.close();
-                return line;
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-        
-        // Duplicate file reading pattern 2
-        public String loadFile(String path) {
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(path));
-                String line = reader.readLine();
-                reader.close();
-                return line;
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
     }
     """
 
-    # Use enhanced detection for intra-method duplicates
-    duplicate_groups = detect_duplicate_groups_enhanced(java_code, threshold=0.90, detect_intra_method=True, prefer_methods=True)
-    # print_groups(duplicate_groups)
-    print(duplicate_groups)
+    print("="*60)
+    print("DUPLICATE TOOL v0.2 - Java Code Duplicate Detection")
+    print("="*60)
+    print("TESTING WITH GOOGLE JAVA FORMAT (use_formatting=True)")
+    print("="*60)
+    duplicate_groups_formatted = detect_duplicate_groups_enhanced(
+        java_code, 
+        threshold=0.90, 
+        detect_intra_method=True, 
+        prefer_methods=True, 
+        use_formatting=True
+    )
+    print_groups(duplicate_groups_formatted)
+
+    print("\n" + "="*60)
+    print("TESTING WITHOUT FORMATTING (use_formatting=False)")
+    print("="*60)
+    duplicate_groups_unformatted = detect_duplicate_groups_enhanced(
+        java_code, 
+        threshold=0.90, 
+        detect_intra_method=True, 
+        prefer_methods=True, 
+        use_formatting=False
+    )
+    print_groups(duplicate_groups_unformatted)
+
+if __name__ == "__main__":
+    main()
